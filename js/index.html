@@ -3,18 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Juego de Adivinanzas</title>
 </head>
 <body>
-    //  genera un número aleatorio entre 1 y 100, 
-    // jugador tiene que adivinar ese número
-    //proporcionar pistas indicando si el número a adivinar es mayor o menor que el intento actual.
 
-    <form action="">
-        <label for=""></label>
-        <input type="text">
-        <button type="submit"></button>
-    </form>
+    <h1>Juego de Adivinanzas</h1>
+    
+    <script>
+        function generarNumeroAleatorio() {
+            return Math.floor(Math.random() * 100) + 1;
+        }
+
+        function jugarJuego() {
+            const numeroAleatorio = generarNumeroAleatorio();
+            let intentos = 0;
+
+            while (true) {
+                const adivinanza = obtenerInputDelUsuario();
+
+                if (!isNaN(adivinanza)) {
+                    intentos++;
+
+                    if (adivinanza === numeroAleatorio) {
+                        alert(`¡Felicidades! Adivinaste el número en ${intentos} intentos.`);
+                        break; // Salir del bucle
+                    } else {
+                        const pista = adivinanza > numeroAleatorio ? 'Demasiado alto.' : 'Demasiado bajo.';
+                        alert(pista);
+                    }
+                } else {
+                    alert("Por favor, ingresa un número válido.");
+                    break; // Salir del bucle en caso de entrada no válida
+                }
+            }
+        }
+
+        function obtenerInputDelUsuario() {
+            return parseInt(prompt('Adivina el número (entre 1 y 100):'));
+        }
+    </script>
+
+    <button onclick="jugarJuego()">Comenzar Juego</button>
 
 </body>
 </html>
