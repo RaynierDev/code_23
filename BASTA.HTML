@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basta - Juego de Letras Aleatorias</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 20px;
+            background-color: #000;
+            color: #fff;
+        }
+        #contenedor-principal {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #700B97;
+        }
+        label, input, button {
+            margin: 10px;
+            padding: 8px;
+            font-size: 16px;
+        }
+        #contenedor-jugadores, #contenedor-botones, #contenedor-puntajes,
+        #contenedor-ganador, #puntos-container, #historial-container {
+            margin-top: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px;
+            padding: 8px;
+            font-size: 18px;
+            background-color: #700B97;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        #letra {
+            font-size: 48px;
+            margin: 20px;
+            display: inline-block;
+            padding: 20px;
+            background-color: #700B97;
+            color: #fff;
+            border-radius: 10px;
+        }
+        button {
+            background-color: #700B97;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #5D077B;
+        }
+        #historial-textarea {
+            width: 100%;
+            margin-top: 10px;
+            
+        }
+        #listaGanador {
+            background-color: #FA7D09;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 0;
+            }
+    </style>
+</head>
+<body>
+
+<div id="contenedor-principal">
+    <h1>Basta - Juego de Letras Aleatorias</h1>
+
+    <label for="jugador">Nombre del Jugador:</label>
+    <input type="text" id="jugador" placeholder="Nombre del Jugador">
+    <button onclick="agregarJugador()">Agregar Jugador</button>
+
+    <div id="contenedor-jugadores">
+        <p>Jugadores anotados:</p>
+        <ul id="jugadores"></ul>
+    </div>
+
+    <div id="contenedor-botones">
+        <button onclick="iniciarJuego()">Iniciar Juego</button>
+        <button onclick="iniciarRonda()">Iniciar Ronda</button>
+        <button onclick="asignarPuntos()">Asignar Puntos</button>
+        <button onclick="terminarJuego()">Terminar Juego</button>
+    </div>
+
+    <div id="contenedor-puntajes">
+        <h2>Puntajes</h2>
+        <ul id="puntajes"></ul>
+    </div>
+
+    <p>Ronda: <span id="contadorRondas">0</span></p>
+    <p id="letra"></p>
+
+    <div id="frase-divertida"></div>
+
+    <div id="contenedor-ganador">
+        <h2>Ganador</h2>
+        <ul id="listaGanador"></ul>
+    </div>
+
+    <div id="puntos-container">
+        <h2>Asignar Puntos</h2>
+        <div id="puntos-lista"></div>
+        <button onclick="guardarPuntos()">Guardar Puntos</button>
+    </div>
+
+    <div id="historial-container">
+        <div id="historial">
+            <!-- <button onclick="mostrarHistorial()">Mostrar Historial</button>
+            <button onclick="limpiarHistorial()">Limpiar Historial</button>
+        </div> -->
+        <!-- <textarea id="historial-textarea" rows="10" cols="50" readonly></textarea> -->
+    </div>
+</div>
+
+<script>
+    var letrasDisponibles = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
+    var jugadores = {};
+    var puntajes = {};
+    var historial = [];
+    var rondasTotales = 5;
+    var rondaActual = 0;
+    var juegoTerminado = false;
+
+    function agregarJugador() {
+        var jugador = document.getElementById('jugador').value.trim();
+        if (jugador === '') {
+            alert('Ingresa el nombre del jugador.');
+            return;
+        }
+
+        if (jugadores[jugador]) {
+            alert('Este jugador ya está anotado.');
+            return;
+        }
+
+        jugadores[jugador] = true;
+
+        actualizarJugadores();
+        document.getElementById('jugador').value = '';
+    }
+
+    function iniciarJuego() {
+        reiniciarJuego();
+        limpiarHistorial();
+        generarFraseDivertida();
+    }
+
+    function iniciarRonda() {
+        if (juegoTerminado) {
+            alert('El juego ha terminado. Reinicia para jugar de nuevo.');
+            return;
+        }
+
+        var letraActual = document.getElementById('letra').innerText;
+
+        if (letraActual !== '') {
+            letrasDisponibles = letrasDisponibles.replace(letraActual, '');
+        }
+
+        if (letrasDisponibles.length > 0) {
+            var nuevaLetra = letrasDisponibles.charAt(Math.floor(Math.random() * letrasDisponibles.length));
+            document.getElementById('letra').innerText = nuevaLetra;
+
+            almacenarHistorialInicioRonda();
+            rondaActual++;
+
+            if (rondaActual % 3 === 0) {
+                mostrarGanador();
+                reiniciarJuego();
+            } else {
+                actualizarContadorRondas();
+            }
+        } else {
+            document.getElementById('letra').innerText = 'Fin del juego';
+            mostrarGanador();
+            reiniciarJuego();
+        }
+
+        actualizarPuntajes();
+    }
+
+    function asignarPuntos() {
+        if (juegoTerminado) {
+            alert('El juego ha terminado. Reinicia para jugar de nuevo.');
+            return;
+        }
+
+        var puntosContainer = document.getElementById('puntos-container');
+        var puntosLista = document.getElementById('puntos-lista');
+        puntosLista.innerHTML = '';
+
+        for (var jugador in jugadores) {
+            var div = document.createElement('div');
+            div.innerHTML = jugador + ': <input type="number" id="puntos-' + jugador + '" placeholder="Puntos">';
+            puntosLista.appendChild(div);
+        }
+
+        puntosContainer.style.display = 'block';
+    }
+
+    function guardarPuntos() {
+        var puntosContainer = document.getElementById('puntos-container');
+        puntosContainer.style.display = 'none';
+
+        for (var jugador in jugadores) {
+            var puntosInput = document.getElementById('puntos-' + jugador);
+            var puntos = parseInt(puntosInput.value);
+
+            if (!isNaN(puntos)) {
+                if (!puntajes[jugador]) {
+                    puntajes[jugador] = 0;
+                }
+
+                puntajes[jugador] += puntos;
+            } else {
+                alert('Por favor, ingresa un número válido de puntos para ' + jugador);
+            }
+
+            puntosInput.value = ''; // Limpiar el input
+        }
+
+        actualizarPuntajes();
+    }
+
+    function terminarJuego() {
+        if (juegoTerminado) {
+            alert('El juego ya ha terminado.');
+            return;
+        }
+
+        mostrarGanador();
+        reiniciarJuego();
+        juegoTerminado = true;
+    }
+
+    function limpiarHistorial() {
+        historial = [];
+    }
+
+    function actualizarJugadores() {
+        var jugadoresLista = document.getElementById('jugadores');
+        jugadoresLista.innerHTML = '';
+
+        for (var jugador in jugadores) {
+            var li = document.createElement('li');
+            li.innerText = jugador;
+            jugadoresLista.appendChild(li);
+        }
+    }
+
+    function actualizarPuntajes() {
+        var puntajesLista = document.getElementById('puntajes');
+        puntajesLista.innerHTML = '';
+
+        for (var jugador in puntajes) {
+            var li = document.createElement('li');
+            li.innerText = jugador + ': ' + puntajes[jugador] + ' puntos';
+            puntajesLista.appendChild(li);
+        }
+    }
+
+    function actualizarContadorRondas() {
+        document.getElementById('contadorRondas').innerText = rondaActual;
+    }
+
+    function reiniciarJuego() {
+        letrasDisponibles = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ';
+        puntajes = {};
+        juegoTerminado = false;
+        rondaActual = 0;
+        actualizarContadorRondas();
+    }
+
+    function mostrarGanador() {
+        var maxPuntaje = 0;
+        var ganadores = [];
+
+        for (var jugador in puntajes) {
+            if (puntajes[jugador] > maxPuntaje) {
+                maxPuntaje = puntajes[jugador];
+                ganadores = [jugador];
+            } else if (puntajes[jugador] === maxPuntaje) {
+                ganadores.push(jugador);
+            }
+        }
+
+        // Mostrar ganador en el DOM
+        var ganadorDiv = document.getElementById('contenedor-ganador');
+        var listaGanador = document.getElementById('listaGanador');
+
+        listaGanador.innerHTML = ''; // Limpiar la lista
+
+        for (var i = 0; i < ganadores.length; i++) {
+            var li = document.createElement('li');
+            li.innerText = ganadores[i] + ' con ' + maxPuntaje + ' puntos';
+            listaGanador.appendChild(li);
+        }
+
+        ganadorDiv.style.display = 'block';
+    }
+
+    function almacenarHistorialInicioRonda() {
+        var resultadoRonda = {
+            ronda: rondaActual,
+            inicioRonda: true,
+            puntajes: Object.assign({}, puntajes)
+        };
+        historial.push(resultadoRonda);
+    }
+
+    function mostrarHistorial() {
+        var historialStr = 'Historial de Puntajes:\n';
+
+        for (var i = 0; i < historial.length; i++) {
+            historialStr += 'Ronda ' + historial[i].ronda + ': ';
+
+            if (historial[i].inicioRonda) {
+                historialStr += 'Inicio de la ronda\n';
+            } else {
+                for (var jugador in historial[i].puntajes) {
+                    historialStr += jugador + ': ' + historial[i].puntajes[jugador] + ' puntos\n';
+                }
+            }
+        }
+
+        // document.getElementById('historial-textarea').value = historialStr;
+        // document.getElementById('historial-container').style.display = 'block';
+    }
+
+    function generarFraseDivertida() {
+        var frasesDivertidas = [
+            "¡Que comience la diversión!",
+            "¡Prepárate para arrasar con las respuestas!",
+            "¡Que gane el mejor!",
+            "¡A escribir como locos!",
+            "¡Vamos a demostrar quién es el más rápido!",
+        ];
+
+        var fraseDivertida = frasesDivertidas[Math.floor(Math.random() * frasesDivertidas.length)];
+
+        document.getElementById('frase-divertida').innerText = fraseDivertida;
+    }
+</script>
+
+</body>
+</html>
